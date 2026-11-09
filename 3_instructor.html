@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Horizon Portal – Instructor Dashboard</title>
+<style>
+  :root {
+    --navy: #0f2a4a;
+    --navy-2: #1d4373;
+    --accent: #2f7fd8;
+    --bg: #f1f4f8;
+    --line: #dfe5ec;
+    --text: #1c2733;
+    --muted: #64748b;
+    --ok: #1e8e5a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif; background: var(--bg); color: var(--text); }
+
+  .app { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+  .sidebar { background: var(--navy); color: #cfd8e3; padding: 24px 16px; }
+  .sidebar .brand { color: #fff; font-weight: 700; font-size: 18px; padding: 0 12px 28px; }
+  .sidebar .brand span { display: block; font-size: 12px; font-weight: 400; opacity: .7; }
+  .nav a { display: flex; align-items: center; gap: 12px; color: #cfd8e3; padding: 11px 12px; border-radius: 8px; margin-bottom: 4px; font-size: 15px; text-decoration: none; }
+  .nav a:hover { background: rgba(255,255,255,.08); color: #fff; }
+  .nav a.active { background: var(--accent); color: #fff; }
+  .nav .ico { width: 18px; text-align: center; }
+
+  .main { padding: 28px 32px; min-width: 0; }
+  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; gap: 16px; flex-wrap: wrap; }
+  .topbar h1 { font-size: 26px; }
+  .topbar p { color: var(--muted); margin-top: 4px; }
+  .user-chip { display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid var(--line); padding: 6px 14px 6px 6px; border-radius: 30px; font-size: 14px; }
+  .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--navy-2); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 13px; }
+
+  .course-select { display: flex; gap: 12px; align-items: center; margin-bottom: 22px; flex-wrap: wrap; }
+  .course-select label { font-weight: 600; font-size: 14px; }
+  select { padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px; font-size: 15px; font-family: inherit; background: #fff; }
+
+  .layout { display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start; }
+  .panel { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 22px; min-width: 0; }
+  .panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 12px; flex-wrap: wrap; }
+  .panel h2 { font-size: 18px; }
+  .tag { background: var(--bg); color: var(--muted); font-size: 13px; padding: 5px 10px; border-radius: 20px; }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; padding: 10px 12px; background: var(--bg); }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  td .who { display: flex; align-items: center; gap: 10px; }
+  td .mini { width: 30px; height: 30px; border-radius: 50%; background: #e3ecf7; color: var(--navy-2); font-weight: 700; font-size: 12px; display: grid; place-items: center; }
+  .mark { width: 90px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 14px; font-family: inherit; text-align: center; }
+  .mark:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(47,127,216,.15); }
+
+  .footer-row { display: flex; justify-content: space-between; align-items: center; margin-top: 18px; gap: 12px; flex-wrap: wrap; }
+  .footer-row .info { color: var(--muted); font-size: 13px; }
+  .btn { background: var(--navy); color: #fff; border: none; padding: 12px 22px; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .btn:hover { background: var(--navy-2); }
+
+  .toast { display: none; background: #e6f5ee; color: var(--ok); border: 1px solid #bfe5d1; padding: 12px 16px; border-radius: 8px; font-size: 14px; margin-top: 14px; font-weight: 600; }
+
+  .dropzone {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 6px; width: 100%; min-height: 190px; padding: 28px 20px;
+    border: 2px dashed #b9c6d6; border-radius: 12px; background: #fafcfe;
+    text-align: center; cursor: pointer; overflow: hidden; transition: border-color .15s, background .15s;
+  }
+  .dropzone:hover, .dropzone.over { border-color: var(--accent); background: #eef5fd; }
+  .dropzone .icon {
+    width: 52px; height: 52px; border-radius: 50%; background: #e3ecf7; color: var(--accent);
+    display: flex; align-items: center; justify-content: center; margin-bottom: 8px; flex-shrink: 0;
+  }
+  .dropzone .icon svg { width: 26px; height: 26px; }
+  .dropzone .main-text { font-size: 15px; font-weight: 600; color: var(--text); line-height: 1.45; max-width: 240px; overflow-wrap: break-word; }
+  .dropzone .main-text .browse { color: var(--accent); }
+  .dropzone .sub-text { font-size: 12px; color: var(--muted); line-height: 1.4; }
+
+  .files { margin-top: 18px; }
+  .files h3 { font-size: 14px; color: var(--muted); margin-bottom: 10px; font-weight: 600; }
+  .file { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .file:last-child { border-bottom: none; }
+  .file .pdf { width: 34px; height: 40px; background: #fdecea; color: #c0392b; border-radius: 6px; font-size: 11px; font-weight: 700; display: grid; place-items: center; flex-shrink: 0; }
+  .file > div:last-child { min-width: 0; overflow-wrap: anywhere; }
+  .file .meta { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .access { font-size: 12px; color: var(--muted); margin-top: 14px; padding: 10px 12px; background: var(--bg); border-radius: 8px; }
+
+  @media (max-width: 1000px) { .layout { grid-template-columns: 1fr; } }
+  @media (max-width: 760px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { padding: 16px; }
+    .sidebar .brand { padding-bottom: 12px; }
+    .nav { display: flex; overflow-x: auto; gap: 6px; }
+    .nav a { white-space: nowrap; margin: 0; }
+    .main { padding: 20px 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">Horizon Portal<span>Instructor</span></div>
+    <nav class="nav">
+      <a href="#" class="active"><span class="ico">▦</span> Dashboard</a>
+      <a href="#"><span class="ico">✎</span> Grade Capture</a>
+      <a href="#"><span class="ico">▤</span> Course Materials</a>
+      <a href="#"><span class="ico">✉</span> Announcements</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h1>Instructor Dashboard</h1>
+        <p>Capture marks and share materials with your class.</p>
+      </div>
+      <div class="user-chip"><div class="avatar">TN</div> Ms. T. Nkosi</div>
+    </div>
+
+    <div class="course-select">
+      <label for="course">Course:</label>
+      <select id="course">
+        <option>IT101 – Introduction to Programming</option>
+        <option>IT102 – Database Fundamentals</option>
+      </select>
+      <label for="assess">Assessment:</label>
+      <select id="assess">
+        <option>Assignment 2 (20%)</option>
+        <option>Test 1 (15%)</option>
+        <option>Final Exam (50%)</option>
+      </select>
+    </div>
+
+    <div class="layout">
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Grade Capture</h2>
+          <span class="tag">8 students enrolled</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Student Name</th><th>Student Number</th><th>Enter Mark (%)</th></tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+        <div class="footer-row">
+          <span class="info" id="count">0 of 8 marks entered</span>
+          <button class="btn" onclick="submitGrades()">Submit Grades</button>
+        </div>
+        <div class="toast" id="toast">✓ Grades submitted. Students can now see their marks.</div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h2>Upload Course Material</h2></div>
+        <label class="dropzone" id="drop">
+          <input type="file" id="fileInput" accept=".pdf" multiple hidden>
+          <div class="icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>
+            </svg>
+          </div>
+          <div class="main-text">Drag and drop files here or <span class="browse">click to browse</span></div>
+          <div class="sub-text">Max 20 MB</div>
+        </label>
+        <div class="files">
+          <h3>Uploaded to IT101</h3>
+          <div id="fileList">
+            <div class="file"><div class="pdf">PDF</div><div><div>Week 1 – Variables and Data Types.pdf</div><div class="meta">2.1 MB · 12 Oct 2026</div></div></div>
+            <div class="file"><div class="pdf">PDF</div><div><div>Week 2 – Control Structures.pdf</div><div class="meta">1.8 MB · 19 Oct 2026</div></div></div>
+            <div class="file"><div class="pdf">PDF</div><div><div>Assignment 2 Brief.pdf</div><div class="meta">640 KB · 26 Oct 2026</div></div></div>
+          </div>
+        </div>
+        <div class="access">🔒 Only students enrolled in IT101 can view these files.</div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<script>
+  const students = [
+    ["John Doe", "ST10234567", 74], ["Thandiwe Mokoena", "ST10234581", 88],
+    ["Sipho Ndlovu", "ST10234602", ""], ["Aisha Patel", "ST10234619", 91],
+    ["Pieter Botha", "ST10234633", ""], ["Lerato Khumalo", "ST10234648", 67],
+    ["Michael Smith", "ST10234655", ""], ["Nomsa Zulu", "ST10234670", 79]
+  ];
+  const rows = document.getElementById("rows");
+  students.forEach(([name, num, mark]) => {
+    const initials = name.split(" ").map(w => w[0]).join("");
+    rows.insertAdjacentHTML("beforeend",
+      `<tr><td><div class="who"><div class="mini">${initials}</div>${name}</div></td>
+       <td>${num}</td>
+       <td><input class="mark" type="number" min="0" max="100" placeholder="–" value="${mark}"></td></tr>`);
+  });
+
+  function updateCount() {
+    const marks = [...document.querySelectorAll(".mark")];
+    document.getElementById("count").textContent =
+      `${marks.filter(m => m.value !== "").length} of ${marks.length} marks entered`;
+  }
+  rows.addEventListener("input", updateCount);
+  updateCount();
+
+  function submitGrades() {
+    const t = document.getElementById("toast");
+    t.style.display = "block";
+    setTimeout(() => t.style.display = "none", 3500);
+  }
+
+  // Drag-and-drop upload (front-end only)
+  const drop = document.getElementById("drop");
+  const list = document.getElementById("fileList");
+  const addFiles = files => [...files].forEach(f => {
+    const size = f.size > 1048576 ? (f.size / 1048576).toFixed(1) + " MB" : Math.round(f.size / 1024) + " KB";
+    list.insertAdjacentHTML("afterbegin",
+      `<div class="file"><div class="pdf">PDF</div><div><div>${f.name.replace(/</g, "&lt;")}</div><div class="meta">${size} · Just now</div></div></div>`);
+  });
+  ["dragenter", "dragover"].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.add("over"); }));
+  ["dragleave", "drop"].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.remove("over"); }));
+  drop.addEventListener("drop", ev => addFiles(ev.dataTransfer.files));
+  document.getElementById("fileInput").addEventListener("change", ev => addFiles(ev.target.files));
+</script>
+</body>
+</html>

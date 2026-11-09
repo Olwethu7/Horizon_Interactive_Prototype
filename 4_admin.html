@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Horizon Portal – Admin Dashboard</title>
+<style>
+  :root {
+    --navy: #0f2a4a;
+    --navy-2: #1d4373;
+    --accent: #2f7fd8;
+    --bg: #f1f4f8;
+    --line: #dfe5ec;
+    --text: #1c2733;
+    --muted: #64748b;
+    --danger: #c0392b;
+    --warn: #b7791f;
+    --ok: #1e8e5a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif; background: var(--bg); color: var(--text); }
+
+  .app { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+  .sidebar { background: var(--navy); color: #cfd8e3; padding: 24px 16px; }
+  .sidebar .brand { color: #fff; font-weight: 700; font-size: 18px; padding: 0 12px 28px; }
+  .sidebar .brand span { display: block; font-size: 12px; font-weight: 400; opacity: .7; }
+  .nav a { display: flex; align-items: center; gap: 12px; color: #cfd8e3; padding: 11px 12px; border-radius: 8px; margin-bottom: 4px; font-size: 15px; text-decoration: none; }
+  .nav a:hover { background: rgba(255,255,255,.08); color: #fff; }
+  .nav a.active { background: var(--accent); color: #fff; }
+  .nav .ico { width: 18px; text-align: center; }
+
+  .main { padding: 28px 32px; min-width: 0; }
+  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; gap: 16px; flex-wrap: wrap; }
+  .topbar h1 { font-size: 26px; }
+  .topbar p { color: var(--muted); margin-top: 4px; }
+  .btn { background: var(--navy); color: #fff; border: none; padding: 12px 20px; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .btn:hover { background: var(--navy-2); }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 18px; margin-bottom: 24px; }
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 20px; border-top: 4px solid var(--accent); }
+  .card .label { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: .5px; }
+  .card .value { font-size: 30px; font-weight: 700; margin-top: 8px; }
+  .card .hint { font-size: 13px; margin-top: 6px; color: var(--muted); }
+  .card .up { color: var(--ok); font-weight: 600; }
+  .card.fees { border-top-color: var(--danger); }
+  .card.fees .value { color: var(--danger); }
+  .card.overdue { border-top-color: var(--warn); }
+
+  .grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; margin-bottom: 24px; }
+  .panel { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 22px; min-width: 0; }
+  .panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; gap: 12px; flex-wrap: wrap; }
+  .panel h2 { font-size: 18px; }
+  .legend { display: flex; gap: 14px; font-size: 13px; color: var(--muted); }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; }
+
+  /* CSS bar chart */
+  .chart { display: flex; align-items: flex-end; justify-content: space-around; gap: 24px; height: 240px; padding: 0 10px; border-bottom: 2px solid var(--line); background:
+      repeating-linear-gradient(to top, transparent 0, transparent 59px, var(--line) 59px, var(--line) 60px); }
+  .bar-group { display: flex; align-items: flex-end; gap: 8px; height: 100%; flex: 1; justify-content: center; }
+  .bar { width: 38px; border-radius: 6px 6px 0 0; position: relative; }
+  .bar span { position: absolute; top: -22px; left: 50%; transform: translateX(-50%); font-size: 12px; font-weight: 700; color: var(--text); }
+  .bar.ba  { background: var(--navy); }
+  .bar.it  { background: var(--accent); }
+  .bar.hos { background: #9fbfe6; }
+  .x-labels { display: flex; justify-content: space-around; padding: 10px 10px 0; font-size: 13px; color: var(--muted); font-weight: 600; }
+  .x-labels div { flex: 1; text-align: center; }
+
+  .breakdown .item { margin-bottom: 18px; }
+  .breakdown .row { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 6px; }
+  .breakdown .row span:last-child { font-weight: 700; }
+  .track { height: 10px; background: var(--bg); border-radius: 5px; overflow: hidden; }
+  .track div { height: 100%; border-radius: 5px; }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; padding: 10px 12px; background: var(--bg); }
+  td { padding: 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  td.amt { font-weight: 700; }
+  .status { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+  .status.overdue { background: #fdecea; color: var(--danger); }
+  .status.due { background: #fff4e0; color: var(--warn); }
+  .link { color: var(--accent); font-weight: 600; font-size: 13px; text-decoration: none; }
+
+  @media (max-width: 1000px) { .grid { grid-template-columns: 1fr; } }
+  @media (max-width: 760px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { padding: 16px; }
+    .sidebar .brand { padding-bottom: 12px; }
+    .nav { display: flex; overflow-x: auto; gap: 6px; }
+    .nav a { white-space: nowrap; margin: 0; }
+    .main { padding: 20px 16px; }
+    .bar { width: 22px; }
+    .chart { gap: 8px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">Horizon Portal<span>Administrator</span></div>
+    <nav class="nav">
+      <a href="#" class="active"><span class="ico">▦</span> Dashboard</a>
+      <a href="#"><span class="ico">☺</span> Students</a>
+      <a href="#"><span class="ico">R</span> Finance</a>
+      <a href="#"><span class="ico">▤</span> Reports</a>
+      <a href="#"><span class="ico">✉</span> Announcements</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h1>Admin Dashboard</h1>
+        <p>Overview for 2026 · Last updated today at 08:00</p>
+      </div>
+      <button class="btn" onclick="alert('Consolidated PDF report generated (prototype).')">⤓ Generate PDF Report</button>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <div class="label">Total Students</div>
+        <div class="value">450</div>
+        <div class="hint"><span class="up">▲ 12%</span> since Term 1</div>
+      </div>
+      <div class="card fees">
+        <div class="label">Outstanding Fees</div>
+        <div class="value">R125,000</div>
+        <div class="hint">Across 38 student accounts</div>
+      </div>
+      <div class="card overdue">
+        <div class="label">Overdue Invoices</div>
+        <div class="value">14</div>
+        <div class="hint">More than 30 days late</div>
+      </div>
+      <div class="card">
+        <div class="label">Fees Collected</div>
+        <div class="value">R2.1m</div>
+        <div class="hint">94% collection rate</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Enrollment Trends</h2>
+          <div class="legend"><span><i style="background:var(--navy)"></i>Business Admin</span><span><i style="background:var(--accent)"></i>IT</span><span><i style="background:#9fbfe6"></i>Hospitality</span></div>
+        </div>
+        <!-- Each 60px grid line = 50 students; bar height = students × 1.2px -->
+        <div class="chart">
+          <div class="bar-group">
+            <div class="bar ba"  style="height:132px"><span>110</span></div>
+            <div class="bar it"  style="height:150px"><span>125</span></div>
+            <div class="bar hos" style="height:78px"><span>65</span></div>
+          </div>
+          <div class="bar-group">
+            <div class="bar ba"  style="height:144px"><span>120</span></div>
+            <div class="bar it"  style="height:168px"><span>140</span></div>
+            <div class="bar hos" style="height:90px"><span>75</span></div>
+          </div>
+          <div class="bar-group">
+            <div class="bar ba"  style="height:156px"><span>130</span></div>
+            <div class="bar it"  style="height:198px"><span>165</span></div>
+            <div class="bar hos" style="height:186px"><span>155</span></div>
+          </div>
+        </div>
+        <div class="x-labels"><div>Term 1</div><div>Term 2</div><div>Term 3</div></div>
+      </section>
+
+      <section class="panel breakdown">
+        <div class="panel-head"><h2>Term 3 by Programme</h2></div>
+        <div class="item">
+          <div class="row"><span>Information Technology</span><span>165</span></div>
+          <div class="track"><div style="width:37%; background:var(--accent)"></div></div>
+        </div>
+        <div class="item">
+          <div class="row"><span>Hospitality Management</span><span>155</span></div>
+          <div class="track"><div style="width:34%; background:#9fbfe6"></div></div>
+        </div>
+        <div class="item">
+          <div class="row"><span>Business Administration</span><span>130</span></div>
+          <div class="track"><div style="width:29%; background:var(--navy)"></div></div>
+        </div>
+        <p style="font-size:13px; color:var(--muted); margin-top:8px;">Total: 450 students enrolled in Term 3.</p>
+      </section>
+    </div>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Pending Payments</h2>
+        <a href="#" class="link">View all 38 →</a>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Student Name</th><th>Student No.</th><th>Course</th><th>Amount</th><th>Due Date</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            <tr><td>John Doe</td><td>ST10234567</td><td>IT101</td><td class="amt">R5,000</td><td>30 Nov 2026</td><td><span class="status due">Due</span></td><td><a href="#" class="link">Send reminder</a></td></tr>
+            <tr><td>Sipho Ndlovu</td><td>ST10234602</td><td>BA100</td><td class="amt">R8,250</td><td>30 Sep 2026</td><td><span class="status overdue">Overdue</span></td><td><a href="#" class="link">Send reminder</a></td></tr>
+            <tr><td>Pieter Botha</td><td>ST10234633</td><td>HOS120</td><td class="amt">R6,000</td><td>15 Oct 2026</td><td><span class="status overdue">Overdue</span></td><td><a href="#" class="link">Send reminder</a></td></tr>
+            <tr><td>Lerato Khumalo</td><td>ST10234648</td><td>IT101</td><td class="amt">R3,500</td><td>30 Nov 2026</td><td><span class="status due">Due</span></td><td><a href="#" class="link">Send reminder</a></td></tr>
+            <tr><td>Michael Smith</td><td>ST10234655</td><td>BA100</td><td class="amt">R4,750</td><td>31 Oct 2026</td><td><span class="status overdue">Overdue</span></td><td><a href="#" class="link">Send reminder</a></td></tr>
+            <tr><td>Fatima Adams</td><td>ST10234691</td><td>HOS120</td><td class="amt">R2,900</td><td>15 Dec 2026</td><td><span class="status due">Due</span></td><td><a href="#" class="link">Send reminder</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+</body>
+</html>
